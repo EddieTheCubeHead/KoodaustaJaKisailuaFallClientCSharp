@@ -1,4 +1,6 @@
-﻿namespace WebsocketClient.Entities;
+﻿using WebsocketClient.Entities;
+
+namespace WebsocketClient.Wrapper.Entities;
 
 public record ProjectileData
 {

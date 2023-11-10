@@ -1,4 +1,6 @@
-﻿namespace WebsocketClient.Entities;
+﻿using WebsocketClient.Wrapper.Entities;
+
+namespace WebsocketClient.Entities;
 
 public record Command
 {

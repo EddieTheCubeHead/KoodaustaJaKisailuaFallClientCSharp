@@ -1,4 +1,4 @@
-﻿namespace WebsocketClient.Entities;
+﻿namespace WebsocketClient.Wrapper.Entities;
 
 public enum ActionType
 {

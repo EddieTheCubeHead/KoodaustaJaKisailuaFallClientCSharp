@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestPlatform.CrossPlatEngine.Helpers;
 using WebsocketClient.Entities;
 using WebsocketClient.Wrapper;
+using WebsocketClient.Wrapper.Entities;
 
 namespace WebsocketClientTest.Wrapper;
 

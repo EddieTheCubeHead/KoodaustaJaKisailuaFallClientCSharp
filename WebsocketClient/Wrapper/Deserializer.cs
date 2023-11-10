@@ -1,6 +1,5 @@
-﻿using System.Text.Json.Serialization;
-using Newtonsoft.Json;
-using WebsocketClient.Entities;
+﻿using Newtonsoft.Json;
+using WebsocketClient.Wrapper.Entities;
 
 namespace WebsocketClient.Wrapper;
 
