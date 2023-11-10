@@ -59,12 +59,12 @@ public class Deserializer
             CellType.Projectile => new Cell
             {
                 CellType = cellType,
-                // ProjectileData = this.DeserializeProjectileData(partlyDeserializedCell)
+                ProjectileData = this.DeserializeProjectileData(partlyDeserializedCell.data)
             },
             CellType.Ship => new Cell
             {
                 CellType = cellType,
-                // ShipData = this.DeserializeShipData(partlyDeserializedCell)
+                ShipData = this.DeserializeShipData(partlyDeserializedCell.data)
             },
             _ => new Cell { CellType = cellType }
         };
@@ -73,5 +73,47 @@ public class Deserializer
     private HitBoxData DeserializeHitBoxData(dynamic partlyDeserializedCellData)
     {
         return new HitBoxData { EntityId = partlyDeserializedCellData.entityId };
+    }
+
+    private ShipData DeserializeShipData(dynamic partlyDeserializedShipData)
+    {
+        (CompassDirection direction, Coordinates position) entityLocationData =
+            GetEntityLocationData(partlyDeserializedShipData);
+        return new ShipData
+        {
+            Id = partlyDeserializedShipData.id,
+            Direction = entityLocationData.direction,
+            Position = entityLocationData.position,
+            Health = partlyDeserializedShipData.health,
+            Heat = partlyDeserializedShipData.heat
+        };
+    }
+
+    private ProjectileData DeserializeProjectileData(dynamic partlyDeserializedProjectileData)
+    {
+        (CompassDirection direction, Coordinates position) entityLocationData =
+            GetEntityLocationData(partlyDeserializedProjectileData);
+        return new ProjectileData
+        {
+            Id = partlyDeserializedProjectileData.id,
+            Direction = entityLocationData.direction,
+            Position = entityLocationData.position,
+            Velocity = partlyDeserializedProjectileData.velocity,
+            Mass = partlyDeserializedProjectileData.mass
+        };
+    }
+
+    private (CompassDirection, Coordinates) GetEntityLocationData(dynamic partlyDeserializedEntity)
+    {
+        if (!Enum.TryParse((string)partlyDeserializedEntity.direction, true, out CompassDirection entityDirection))
+        {
+            throw new JsonException(
+                $"Could not parse ship direction from '{partlyDeserializedEntity.direction}'.");
+        }
+
+        var entityCoordinates = new Coordinates
+            { X = partlyDeserializedEntity.position.x, Y = partlyDeserializedEntity.position.y };
+
+        return (entityDirection, entityCoordinates);
     }
 }
