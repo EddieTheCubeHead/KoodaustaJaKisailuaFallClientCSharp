@@ -3,5 +3,5 @@
 public record GameState
 {
     public required int TurnNumber { get; init; }
-    public required List<List<Cell>> Cells { get; init; }
+    public required List<List<Cell>> GameMap { get; init; }
 };

@@ -20,8 +20,7 @@ public class FileLogger : ILogger
 
     public bool IsEnabled(LogLevel logLevel)
     {
-        // Ensure that only information level and higher logs are recorded
-        return logLevel >= LogLevel.Information;
+        return logLevel >= LogLevel.Debug;
     }
 
     public void Log<TState>(
@@ -31,7 +30,6 @@ public class FileLogger : ILogger
         Exception? exception,
         Func<TState, Exception, string> formatter)
     {
-        // Ensure that only information level and higher logs are recorded
         if (!IsEnabled(logLevel))
         {
             return;
