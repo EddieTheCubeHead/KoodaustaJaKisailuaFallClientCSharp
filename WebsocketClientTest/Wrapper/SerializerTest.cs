@@ -5,23 +5,41 @@ using WebsocketClient.Wrapper.Entities;
 
 namespace WebsocketClientTest.Wrapper;
 
-public class DeserializerTest
+public class SerializerTest
 {
     #region Setup
     
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-    private Deserializer _deserializer;
+    private Serializer _serializer;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+    
+    private record TestActionData : IActionData
+    {
+        public string Serialize()
+        {
+            return "{\"testPayload\": \"test\"}";
+        }
+    }
     
     [SetUp]
     public void BeforeEach()
     {
-        _deserializer = new Deserializer();
+        _serializer = new Serializer();
     }
     
     #endregion
     
     #region Tests
+
+    [Test]
+    public void ShouldSerializeCommandToTypeAndInterfaceSerializeCallResult()
+    {
+        var command = new Command{Action = ActionType.Shoot, ActionData = new TestActionData()};
+
+        var commandJson = _serializer.SerializeCommand(command);
+
+        Assert.AreEqual("{\"action\": \"shoot\", \"payload\": {\"testPayload\": \"test\"}}", commandJson);
+    }
 
     [Test]
     public void ShouldDeserializeCellWithNoDataBasedOnCellType()
@@ -33,7 +51,7 @@ public class DeserializerTest
             ("AudioSignature", "{}")
         });
         
-        var gameState = _deserializer.DeserializeGameState(stateJson);
+        var gameState = _serializer.DeserializeGameState(stateJson);
         Assert.Multiple(() =>
         {
             Assert.That(gameState.GameMap[0][0].CellType, Is.EqualTo(CellType.Empty));
@@ -61,7 +79,7 @@ public class DeserializerTest
             ("HitBox", $"{{\"entityId\": \"{hitBoxEntityId}\"}}")
         });
         
-        var gameState = _deserializer.DeserializeGameState(stateJson);
+        var gameState = _serializer.DeserializeGameState(stateJson);
         Assert.Multiple(() =>
         {
             Assert.That(gameState.GameMap[0][0].CellType, Is.EqualTo(CellType.HitBox));
@@ -88,7 +106,7 @@ public class DeserializerTest
             ("ship", shipData)
         });
         
-        var gameState = _deserializer.DeserializeGameState(stateJson);
+        var gameState = _serializer.DeserializeGameState(stateJson);
         
         Assert.Multiple(() =>
         {
@@ -121,7 +139,7 @@ public class DeserializerTest
             ("projectile", projectileData)
         });
         
-        var gameState = _deserializer.DeserializeGameState(stateJson);
+        var gameState = _serializer.DeserializeGameState(stateJson);
         
         Assert.Multiple(() =>
         {
@@ -143,7 +161,7 @@ public class DeserializerTest
         var mapMatrix = "[" + string.Join(", ", Enumerable.Repeat(oneRowData, 10)) + "]";
         var stateJson = $"{{\"turnNumber\": 1, \"gameMap\": {mapMatrix}}}";
         
-        var gameState = _deserializer.DeserializeGameState(stateJson);
+        var gameState = _serializer.DeserializeGameState(stateJson);
 
         Assert.Multiple(() =>
         {
@@ -163,7 +181,7 @@ public class DeserializerTest
             ("Empty", "{}")
         }, 82);
         
-        var gameState = _deserializer.DeserializeGameState(stateJson);
+        var gameState = _serializer.DeserializeGameState(stateJson);
         
         Assert.Multiple(() =>
         {

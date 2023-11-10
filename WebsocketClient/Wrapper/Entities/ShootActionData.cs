@@ -8,6 +8,6 @@ public record ShootActionData : IActionData
     public required int Speed { get; init; }
     public string Serialize()
     {
-        throw new NotImplementedException();
+        return $"{{\"speed\": {Speed},\"mass\": {Mass}}}";
     }
 }

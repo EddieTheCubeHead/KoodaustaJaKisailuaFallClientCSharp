@@ -21,8 +21,4 @@
       <ProjectReference Include="..\WebsocketClient\WebsocketClient.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Wrapper\Entities\" />
-    </ItemGroup>
-
 </Project>

@@ -1,10 +1,18 @@
 ﻿using Newtonsoft.Json;
+using WebsocketClient.Entities;
 using WebsocketClient.Wrapper.Entities;
 
 namespace WebsocketClient.Wrapper;
 
-public class Deserializer
+public class Serializer
 {
+    public string SerializeCommand(Command command)
+    {
+        var actionType = command.Action.ToString().ToLower();
+        var actionData = command.ActionData.Serialize();
+        return $"{{\"action\": \"{actionType}\", \"payload\": {actionData}}}";
+    }
+    
     public GameState DeserializeGameState(string json)
     {
         dynamic? partlyDeserializedState = JsonConvert.DeserializeObject(json);
