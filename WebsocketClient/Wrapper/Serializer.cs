@@ -13,14 +13,8 @@ public class Serializer
         return $"{{\"action\": \"{actionType}\", \"payload\": {actionData}}}";
     }
     
-    public GameState DeserializeGameState(string json)
+    public GameState DeserializeGameState(dynamic partlyDeserializedState)
     {
-        dynamic? partlyDeserializedState = JsonConvert.DeserializeObject(json);
-        if (partlyDeserializedState is null)
-        {
-            throw new JsonException($"Deserializing string form json '{json}' yielded null.");
-        }
-
         return new GameState
         {
             TurnNumber = partlyDeserializedState.turnNumber,
