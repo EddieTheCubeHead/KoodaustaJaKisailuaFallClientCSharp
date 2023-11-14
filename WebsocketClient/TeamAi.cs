@@ -7,6 +7,11 @@ public class TeamAi
 {
     private TeamAiContext _context = new();
 
+    public void ResetContext()
+    {
+        _context = new TeamAiContext();
+    }
+
     public Command? ProcessTick(GameState gameState)
     {
         // Your code goes here

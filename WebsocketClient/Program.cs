@@ -11,7 +11,7 @@ class Program
     private static async Task Main(string[] args)
     {
         const string logFilePath = "../../../../test_log.log";
-        await using var logFileWriter = new StreamWriter(logFilePath, append: true);
+        await using var logFileWriter = new StreamWriter(logFilePath, append: false);
         using var loggerFactory = LoggerFactory.Create(builder =>
         {
             builder.AddConsole();

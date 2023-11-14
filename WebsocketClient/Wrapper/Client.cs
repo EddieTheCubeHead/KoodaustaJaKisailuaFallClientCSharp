@@ -3,6 +3,7 @@ using System.Net.WebSockets;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using WebsocketClient.Entities;
 using WebsocketClient.Wrapper.Entities;
 
 namespace WebsocketClient.Wrapper;
@@ -139,6 +140,8 @@ public class Client
             _logger.LogWarning("Received game start while not in idle state");
             return;
         }
+        
+        _teamAi.ResetContext();
 
         await _webSocket.SendAsync("{\"eventType\": \"startAck\", \"data\": {}}"u8.ToArray(),
                 WebSocketMessageType.Text, true, new CancellationToken());
@@ -147,14 +150,21 @@ public class Client
     private async Task HandleGameTick(GameState gameState)
     {
         _logger.LogInformation($"Received game tick of turn {gameState.TurnNumber}");
-        var command = _teamAi.ProcessTick(gameState);
-        if (command is null)
+        var task = Task.Run(() => _teamAi.ProcessTick(gameState));
+        Command? command;
+        if (task.Wait(TimeSpan.FromMilliseconds(400)))
         {
-            _logger.LogWarning("Received null command from TeamAi");
+            command = task.Result;
+        }
+        else
+        {
+            _logger.LogWarning("TeamAi took too long to process tick");
             return;
         }
+        command ??= new Command { Action = ActionType.Move, ActionData = new MoveActionData { Distance = 0 } };
         await _webSocket.SendAsync(
-            Encoding.UTF8.GetBytes(_serializer.SerializeCommand(command)),
+            Encoding.UTF8.GetBytes(
+                $"{{\"eventType\": \"gameAction\", \"data\": {_serializer.SerializeCommand(command)}}}"),
             WebSocketMessageType.Text, true, new CancellationToken());
     }
     
@@ -162,9 +172,11 @@ public class Client
     {
         if (State != ClientState.Idle)
         {
-            _logger.LogWarning("Received game end while not in in gmae state");
+            _logger.LogWarning("Received game end while not in in game state");
             return;
         }
+        
+        _teamAi.ResetContext();
 
         await _webSocket.SendAsync("{\"eventType\": \"endAck\", \"data\": {}}"u8.ToArray(),
             WebSocketMessageType.Text, true, new CancellationToken());
