@@ -10,36 +10,43 @@ namespace WebsocketClient.Wrapper;
 
 public class Client
 {
-    private ILogger _logger;
-    private WebSocket _webSocket;
-    private TeamAi _teamAi = new TeamAi();
-    private Serializer _serializer = new Serializer();
-    public ClientState State { get; private set; } = ClientState.Unauthorized;
+    private ClientWebSocket? _webSocket;
+    private readonly ILogger _logger;
+    private readonly TeamAi _teamAi;
+    private readonly Serializer _serializer = new();
+    private ClientState State { get; set; } = ClientState.Unauthorized;
 
-    public Client(WebSocket webSocket, ILoggerFactory loggerFactory)
+    public Client(ILoggerFactory loggerFactory)
     {
-        _webSocket = webSocket;
         _logger = loggerFactory.CreateLogger<Client>();
+        _teamAi = new TeamAi(loggerFactory);
     }
     
-    public async Task Run()
+    public async Task Run(string socketUri, string token, string botName)
     {
-        await Authenticate();
+        await Connect(socketUri, token, botName);
+        await Authenticate(token, botName);
         while (true)
         {
             await listenOnWebsocket();
         }
+        // ReSharper disable once FunctionNeverReturns : endless loop to run the client
+    }
+
+    private async Task Connect(string socketAddress, string token, string botName)
+    {
+        _webSocket = new ClientWebSocket();
+        var fullUriString = $"{socketAddress}?token={token}&botName={botName}";
+        _logger.LogInformation($"Connecting to {fullUriString}");
+        await _webSocket.ConnectAsync(new Uri(fullUriString), new CancellationToken());
     }
     
-    private async Task Authenticate()
+    private async Task Authenticate(string token, string botName)
     {
-        var token = "replaceLaterWithConfigFetch";
-        var name = "replaceLaterWithConfigFetch";
-        var authCommand = $"{{\"eventType\": \"auth\", \"data\": {{\"token\": \"{token}\", \"botName\": \"{name}\"}}}}";
-        _logger.LogInformation("Authenticating...");
-        await _webSocket.SendAsync(
-            Encoding.UTF8.GetBytes(authCommand),
-            WebSocketMessageType.Text, true, new CancellationToken());
+        _logger.LogInformation($"Authorizing client with token '{token}' and name '{botName}'.");
+        var authCommand =
+            $"{{\"token\": \"{token}\", \"botName\": \"{botName}\"}}";
+        await SendMessage("auth", authCommand);
     }
 
     private async Task listenOnWebsocket()
@@ -143,15 +150,14 @@ public class Client
         
         _teamAi.ResetContext();
 
-        await _webSocket.SendAsync("{\"eventType\": \"startAck\", \"data\": {}}"u8.ToArray(),
-                WebSocketMessageType.Text, true, new CancellationToken());
+        await SendMessage("startAck", "{}");
     }
     
     private async Task HandleGameTick(GameState gameState)
     {
         _logger.LogInformation($"Received game tick of turn {gameState.TurnNumber}");
         var task = Task.Run(() => _teamAi.ProcessTick(gameState));
-        Command? command;
+        Command? command = null;
         if (task.Wait(TimeSpan.FromMilliseconds(400)))
         {
             command = task.Result;
@@ -159,13 +165,9 @@ public class Client
         else
         {
             _logger.LogWarning("TeamAi took too long to process tick");
-            return;
         }
         command ??= new Command { Action = ActionType.Move, ActionData = new MoveActionData { Distance = 0 } };
-        await _webSocket.SendAsync(
-            Encoding.UTF8.GetBytes(
-                $"{{\"eventType\": \"gameAction\", \"data\": {_serializer.SerializeCommand(command)}}}"),
-            WebSocketMessageType.Text, true, new CancellationToken());
+        await SendMessage("gameAction", _serializer.SerializeCommand(command));
     }
     
     private async Task HandleGameEnd()
@@ -178,7 +180,20 @@ public class Client
         
         _teamAi.ResetContext();
 
-        await _webSocket.SendAsync("{\"eventType\": \"endAck\", \"data\": {}}"u8.ToArray(),
-            WebSocketMessageType.Text, true, new CancellationToken());
+        await SendMessage("endAck", "{}");
+    }
+
+    private async Task SendMessage(string eventType, string data)
+    {
+        if (_webSocket is null)
+        {
+            _logger.LogError("Attempting to send message before websocket initialization!");
+            return;
+        }
+        
+        var fullMessage = $"{{\"eventType\": \"{eventType}\", \"data\": {data}}}";
+        _logger.LogInformation($"Sending: {fullMessage}");
+        await _webSocket.SendAsync(Encoding.UTF8.GetBytes(fullMessage), WebSocketMessageType.Text, true,
+            new CancellationToken());
     }
 }

@@ -17,9 +17,8 @@ class Program
             builder.AddConsole();
             builder.AddProvider(new FileLoggerProvider(logFileWriter));
         });
-        var websocketClient = new ClientWebSocket();
-        await websocketClient.ConnectAsync(new Uri("ws://localhost:8765"), new CancellationToken());
-        var client = new Client(websocketClient, loggerFactory);
-        await client.Run();
+        var uriString = "ws://localhost:8765";
+        var client = new Client(loggerFactory);
+        await client.Run(uriString, "myBotToken", "myBotName");
     }
 }
