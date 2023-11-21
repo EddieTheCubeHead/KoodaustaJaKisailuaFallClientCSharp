@@ -6,6 +6,7 @@ using WebsocketClient.Wrapper.Entities;
 
 namespace WebsocketClientTest.Wrapper;
 
+[TestFixture]
 public class SerializerTest
 {
     #region Setup
