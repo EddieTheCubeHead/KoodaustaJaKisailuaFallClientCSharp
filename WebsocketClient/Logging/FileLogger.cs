@@ -39,7 +39,7 @@ public class FileLogger : ILogger
         var message = formatter(state, exception);
 
         //Write log messages to text file
-        _logFileWriter.WriteLine($"[{logLevel,8}] [{_categoryName,24}] {message}");
+        _logFileWriter.WriteLine($"[{logLevel,-12}] [{_categoryName,-32}] {message}");
         _logFileWriter.Flush();
     }
 }

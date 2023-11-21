@@ -63,7 +63,7 @@ public class Client
 
     private async Task<string> WaitForRawMessage()
     {
-        _logger.LogInformation("Waiting for message...");
+        _logger.LogDebug("Waiting for message...");
         var buffer = new ArraySegment<byte>(new byte[1024]);
         var result = await _webSocket.ReceiveAsync(buffer, new CancellationToken());
         if (buffer.Array is null)
@@ -74,7 +74,7 @@ public class Client
 
         var rawMessage = Encoding.UTF8.GetString(buffer.Array, 0, result.Count);
 
-        _logger.LogInformation($"Received message: {rawMessage}");
+        _logger.LogDebug($"Received message: {rawMessage}");
         return rawMessage;
     }
 
@@ -155,7 +155,7 @@ public class Client
     
     private async Task HandleGameTick(GameState gameState)
     {
-        _logger.LogInformation($"Received game tick of turn {gameState.TurnNumber}");
+        _logger.LogDebug($"Received game tick of turn {gameState.TurnNumber}");
         var task = Task.Run(() => _teamAi.ProcessTick(gameState));
         Command? command = null;
         if (task.Wait(TimeSpan.FromMilliseconds(400)))
@@ -192,7 +192,7 @@ public class Client
         }
         
         var fullMessage = $"{{\"eventType\": \"{eventType}\", \"data\": {data}}}";
-        _logger.LogInformation($"Sending: {fullMessage}");
+        _logger.LogDebug($"Sending: {fullMessage}");
         await _webSocket.SendAsync(Encoding.UTF8.GetBytes(fullMessage), WebSocketMessageType.Text, true,
             new CancellationToken());
     }

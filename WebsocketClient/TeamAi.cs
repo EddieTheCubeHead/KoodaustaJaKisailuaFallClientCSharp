@@ -24,7 +24,6 @@ public class TeamAi
         var timer = System.Diagnostics.Stopwatch.StartNew();
         _logger.LogDebug("Processing tick.");
         
-        Thread.Sleep(123);
         // Your code goes here
         
         timer.Stop();
