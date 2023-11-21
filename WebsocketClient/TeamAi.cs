@@ -6,7 +6,7 @@ namespace WebsocketClient;
 
 public class TeamAi
 {
-    private TeamAiContext _context = new();
+    public TeamAiContext Context = null;
     private readonly ILogger _logger;
     
     public TeamAi(ILoggerFactory loggerFactory)
@@ -14,9 +14,9 @@ public class TeamAi
         _logger = loggerFactory.CreateLogger<TeamAi>();
     }
 
-    public void ResetContext()
+    public void CreateContext(StartGameData gameData)
     {
-        _context = new TeamAiContext();
+        Context = new TeamAiContext(gameData.TickLength, gameData.TurnRate);
     }
 
     public Command? ProcessTick(GameState gameState)

@@ -78,7 +78,7 @@ public class Client
         return rawMessage;
     }
 
-    private (ServerEvent? eventType, GameState? gameState) ParseRawMessage(string rawMessage)
+    private (ServerEvent? eventType, dynamic? eventData) ParseRawMessage(string rawMessage)
     {
         if (string.IsNullOrEmpty(rawMessage))
         {
@@ -97,12 +97,10 @@ public class Client
             return (null, null);
         }
 
-        return serverEvent == ServerEvent.GameTick
-            ? (serverEvent, (GameState)_serializer.DeserializeGameState(partlyParsedMessage.data))
-            : (serverEvent, null);
+        return (serverEvent, partlyParsedMessage.data);
     }
 
-    private async Task HandleEvent(ServerEvent? eventType, GameState? gameState)
+    private async Task HandleEvent(ServerEvent? eventType, dynamic? eventData)
     {
         switch (eventType)
         {
@@ -110,15 +108,10 @@ public class Client
                 HandleAuthAck();
                 break;
             case ServerEvent.StartGame:
-                await HandleGameStart();
+                await HandleGameStart(eventData);
                 break;
             case ServerEvent.GameTick:
-                if (gameState is null)
-                {
-                    _logger.LogWarning("Received null game state on game tick handling");
-                    return;
-                }
-                await HandleGameTick(gameState);
+                await HandleGameTick(eventData);
                 break;
             case ServerEvent.EndGame:
                 await HandleGameEnd();
@@ -140,7 +133,7 @@ public class Client
         }
     }
 
-    private async Task HandleGameStart()
+    private async Task HandleGameStart(dynamic? rawGameData)
     {
         if (State != ClientState.Idle)
         {
@@ -148,17 +141,26 @@ public class Client
             return;
         }
         
-        _teamAi.ResetContext();
+        StartGameData gameData = _serializer.DeserializeStartGameData(rawGameData);
+        
+        _teamAi.CreateContext(gameData);
 
         await SendMessage("startAck", "{}");
     }
     
-    private async Task HandleGameTick(GameState gameState)
+    private async Task HandleGameTick(dynamic? rawGameState)
     {
+        if (rawGameState is null)
+        {
+            _logger.LogWarning("Received null game state data on game tick handling");
+            return;
+        }
+
+        GameState gameState = _serializer.DeserializeGameState(rawGameState);
         _logger.LogDebug($"Received game tick of turn {gameState.TurnNumber}");
         var task = Task.Run(() => _teamAi.ProcessTick(gameState));
         Command? command = null;
-        if (task.Wait(TimeSpan.FromMilliseconds(400)))
+        if (task.Wait(TimeSpan.FromMilliseconds(_teamAi.Context.TickLength - 50)))
         {
             command = task.Result;
         }
@@ -177,8 +179,6 @@ public class Client
             _logger.LogWarning("Received game end while not in in game state");
             return;
         }
-        
-        _teamAi.ResetContext();
 
         await SendMessage("endAck", "{}");
     }

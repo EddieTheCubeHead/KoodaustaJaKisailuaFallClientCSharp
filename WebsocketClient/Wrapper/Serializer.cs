@@ -13,6 +13,15 @@ public class Serializer
         return $"{{\"action\": \"{actionType}\", \"payload\": {actionData}}}";
     }
     
+    public StartGameData DeserializeStartGameData(dynamic startGameData)
+    {
+        return new StartGameData
+        {
+            TickLength = startGameData.tickLength,
+            TurnRate = startGameData.turnRate
+        };
+    }
+    
     public GameState DeserializeGameState(dynamic partlyDeserializedState)
     {
         return new GameState

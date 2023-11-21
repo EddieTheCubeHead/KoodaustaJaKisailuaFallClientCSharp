@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestPlatform.CrossPlatEngine.Helpers;
+using Newtonsoft.Json;
 using WebsocketClient.Entities;
 using WebsocketClient.Wrapper;
 using WebsocketClient.Wrapper.Entities;
@@ -44,14 +45,14 @@ public class SerializerTest
     [Test]
     public void ShouldDeserializeCellWithNoDataBasedOnCellType()
     {
-        var stateJson = ConstructStateJson(new[]
+        var partlyDeserializedState = ConstructStateJson(new[]
         {
             ("Empty", "{}"),
             ("OutOfVision", "{}"),
             ("AudioSignature", "{}")
         });
         
-        var gameState = _serializer.DeserializeGameState(stateJson);
+        var gameState = _serializer.DeserializeGameState(partlyDeserializedState);
         Assert.Multiple(() =>
         {
             Assert.That(gameState.GameMap[0][0].CellType, Is.EqualTo(CellType.Empty));
@@ -74,12 +75,12 @@ public class SerializerTest
     public void ShouldSetEntityIdOnHitBoxDeserialization()
     {
         const string hitBoxEntityId = "myShipId";
-        var stateJson = ConstructStateJson(new[]
+        var partlyDeserializedState = ConstructStateJson(new[]
         {
             ("HitBox", $"{{\"entityId\": \"{hitBoxEntityId}\"}}")
         });
         
-        var gameState = _serializer.DeserializeGameState(stateJson);
+        var gameState = _serializer.DeserializeGameState(partlyDeserializedState);
         Assert.Multiple(() =>
         {
             Assert.That(gameState.GameMap[0][0].CellType, Is.EqualTo(CellType.HitBox));
@@ -101,12 +102,12 @@ public class SerializerTest
             $"\"direction\": \"northEast\", " +
             $"\"health\": {shipHealth}, " +
             $"\"heat\": {shipHeat}}}";
-        var stateJson = ConstructStateJson(new[]
+        var partlyDeserializedState = ConstructStateJson(new[]
         {
             ("ship", shipData)
         });
         
-        var gameState = _serializer.DeserializeGameState(stateJson);
+        var gameState = _serializer.DeserializeGameState(partlyDeserializedState);
         
         Assert.Multiple(() =>
         {
@@ -134,12 +135,12 @@ public class SerializerTest
             $"\"direction\": \"southWest\", " +
             $"\"velocity\": {velocity}, " +
             $"\"mass\": {mass}}}";
-        var stateJson = ConstructStateJson(new[]
+        var partlyDeserializedState = ConstructStateJson(new[]
         {
             ("projectile", projectileData)
         });
         
-        var gameState = _serializer.DeserializeGameState(stateJson);
+        var gameState = _serializer.DeserializeGameState(partlyDeserializedState);
         
         Assert.Multiple(() =>
         {
@@ -160,8 +161,9 @@ public class SerializerTest
         var oneRowData = "[" + string.Join(", ", Enumerable.Repeat($"{{{oneCellData}}}", 10)) + "]";
         var mapMatrix = "[" + string.Join(", ", Enumerable.Repeat(oneRowData, 10)) + "]";
         var stateJson = $"{{\"turnNumber\": 1, \"gameMap\": {mapMatrix}}}";
+        var partlyDeserializedStateJson = JsonConvert.DeserializeObject(stateJson);
         
-        var gameState = _serializer.DeserializeGameState(stateJson);
+        var gameState = _serializer.DeserializeGameState(partlyDeserializedStateJson);
 
         Assert.Multiple(() =>
         {
@@ -176,12 +178,12 @@ public class SerializerTest
     [Test]
     public void ShouldDeserializeGameStateToTurnNumberAndMap()
     {
-        var stateJson = ConstructStateJson(new[]
+        var partlyDeserializedState = ConstructStateJson(new[]
         {
             ("Empty", "{}")
         }, 82);
         
-        var gameState = _serializer.DeserializeGameState(stateJson);
+        var gameState = _serializer.DeserializeGameState(partlyDeserializedState);
         
         Assert.Multiple(() =>
         {
@@ -192,15 +194,31 @@ public class SerializerTest
         });
     }
 
+    [Test]
+    public void ShouldDeserializeStartGameDataToTickLengthAndTurnRate()
+    {
+        var startGameJson = "{\"tickLength\": 1000, \"turnRate\": 2}";
+        var partlyDeserializedStartGameJson = JsonConvert.DeserializeObject(startGameJson);
+        
+        var gameData = _serializer.DeserializeStartGameData(partlyDeserializedStartGameJson);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(gameData.TickLength, Is.EqualTo(1000));
+            Assert.That(gameData.TurnRate, Is.EqualTo(2));
+        });
+    }
+
     #endregion
 
     #region helpers
 
-    private static string ConstructStateJson(IEnumerable<(string type, string data)> cells, int turnNumber = 1)
+    private static dynamic? ConstructStateJson(IEnumerable<(string type, string data)> cells, int turnNumber = 1)
     {
         var cellStrings = cells
             .Select(cellString => $"{{\"type\": \"{cellString.type}\", \"data\": {cellString.data}}}").ToList();
-        return $"{{\"turnNumber\": {turnNumber}, \"gameMap\": [[{string.Join(", ", cellStrings)}]]}}";
+        var rawJson = $"{{\"turnNumber\": {turnNumber}, \"gameMap\": [[{string.Join(", ", cellStrings)}]]}}";
+        return JsonConvert.DeserializeObject(rawJson);
     }
     
     #endregion
