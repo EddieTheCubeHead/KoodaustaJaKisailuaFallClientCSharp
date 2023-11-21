@@ -31,14 +31,14 @@ public class GetCoordinateDifferenceTest
 [TestFixture]
 public class GetApproximateDirectionTest
 {
-    [TestCase(1, 0, CompassDirection.North)]
-    [TestCase(1, 1, CompassDirection.NorthEast)]
+    [TestCase(-1, 0, CompassDirection.North)]
+    [TestCase(-1, 1, CompassDirection.NorthEast)]
     [TestCase(0, 1, CompassDirection.East)]
-    [TestCase(-1, 1, CompassDirection.SouthEast)]
-    [TestCase(-1, 0, CompassDirection.South)]
-    [TestCase(-1, -1, CompassDirection.SouthWest)]
+    [TestCase(1, 1, CompassDirection.SouthEast)]
+    [TestCase(1, 0, CompassDirection.South)]
+    [TestCase(1, -1, CompassDirection.SouthWest)]
     [TestCase(0, -1, CompassDirection.West)]
-    [TestCase(1, -1, CompassDirection.NorthWest)]
+    [TestCase(-1, -1, CompassDirection.NorthWest)]
     public void ShouldReturnTheCorrectCompassDirectionForExactDirections(int x, int y, 
         CompassDirection expectedDirection)
     {
@@ -47,22 +47,22 @@ public class GetApproximateDirectionTest
         Assert.That(direction, Is.EqualTo(expectedDirection));
     }
     
-    [TestCase(5, 1, CompassDirection.North)]
-    [TestCase(5, -1, CompassDirection.North)]
-    [TestCase(4, 5, CompassDirection.NorthEast)]
-    [TestCase(5, 4, CompassDirection.NorthEast)]
-    [TestCase(1, 5, CompassDirection.East)]
+    [TestCase(-5, 1, CompassDirection.North)]
+    [TestCase(-5, -1, CompassDirection.North)]
+    [TestCase(-4, 5, CompassDirection.NorthEast)]
+    [TestCase(-5, 4, CompassDirection.NorthEast)]
     [TestCase(-1, 5, CompassDirection.East)]
-    [TestCase(-5, 4, CompassDirection.SouthEast)]
-    [TestCase(-4, 5, CompassDirection.SouthEast)]
-    [TestCase(-5, 1, CompassDirection.South)]
-    [TestCase(-5, -1, CompassDirection.South)]
-    [TestCase(-5, -4, CompassDirection.SouthWest)]
-    [TestCase(-4, -5, CompassDirection.SouthWest)]
-    [TestCase(1, -5, CompassDirection.West)]
+    [TestCase(1, 5, CompassDirection.East)]
+    [TestCase(5, 4, CompassDirection.SouthEast)]
+    [TestCase(4, 5, CompassDirection.SouthEast)]
+    [TestCase(5, 1, CompassDirection.South)]
+    [TestCase(5, -1, CompassDirection.South)]
+    [TestCase(5, -4, CompassDirection.SouthWest)]
+    [TestCase(4, -5, CompassDirection.SouthWest)]
     [TestCase(-1, -5, CompassDirection.West)]
-    [TestCase(5, -4, CompassDirection.NorthWest)]
-    [TestCase(4, -5, CompassDirection.NorthWest)]
+    [TestCase(1, -5, CompassDirection.West)]
+    [TestCase(-5, -4, CompassDirection.NorthWest)]
+    [TestCase(-4, -5, CompassDirection.NorthWest)]
     public void ShouldGiveClosestCompassDirectionIfNotExact(int x, int y, 
         CompassDirection expectedDirection)
     {

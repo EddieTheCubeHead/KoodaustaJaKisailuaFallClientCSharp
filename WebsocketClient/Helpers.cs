@@ -33,7 +33,7 @@ public static class Helpers
     
     private static double GetAngleDegrees(Coordinates vector)
     {
-        var angleRadians = Math.Atan2(vector.Y, vector.X);
+        var angleRadians = Math.Atan2(vector.Y, -vector.X);
         var angleDegrees = angleRadians * 180 / Math.PI;
         // C# doesn't have a modulo operator, % is remainder, we have to do this to ensure degrees is between 0 and 360
         return angleDegrees < 0 ? angleDegrees + 360 : angleDegrees;
