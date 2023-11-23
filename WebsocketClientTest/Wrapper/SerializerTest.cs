@@ -100,7 +100,7 @@ public class SerializerTest
         var shipData =
             $"{{\"id\": \"{shipEntityId}\", " +
             $"\"position\": {{\"x\": {xCoordinate}, \"y\": {yCoordinate}}}, " +
-            $"\"direction\": \"northEast\", " +
+            $"\"direction\": \"ne\", " +
             $"\"health\": {shipHealth}, " +
             $"\"heat\": {shipHeat}}}";
         var partlyDeserializedState = ConstructStateJson(new[]
@@ -133,7 +133,7 @@ public class SerializerTest
         var projectileData =
             $"{{\"id\": \"{projectileEntityId}\", " +
             $"\"position\": {{\"x\": {xCoordinate}, \"y\": {yCoordinate}}}, " +
-            $"\"direction\": \"southWest\", " +
+            $"\"direction\": \"sw\", " +
             $"\"velocity\": {velocity}, " +
             $"\"mass\": {mass}}}";
         var partlyDeserializedState = ConstructStateJson(new[]

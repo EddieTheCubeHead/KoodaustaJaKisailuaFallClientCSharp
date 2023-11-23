@@ -6,6 +6,18 @@ namespace WebsocketClient.Wrapper;
 
 public class Serializer
 {
+    private Dictionary<string, CompassDirection> _directionMappings = new()
+    {
+        { "n", CompassDirection.North },
+        { "ne", CompassDirection.NorthEast },
+        { "e", CompassDirection.East },
+        { "se", CompassDirection.SouthEast },
+        { "s", CompassDirection.South },
+        { "sw", CompassDirection.SouthWest },
+        { "w", CompassDirection.West },
+        { "nw", CompassDirection.NorthWest }
+    };
+    
     public string SerializeCommand(Command command)
     {
         var actionType = command.Action.ToString().ToLower();
@@ -115,11 +127,13 @@ public class Serializer
 
     private (CompassDirection, Coordinates) GetEntityLocationData(dynamic partlyDeserializedEntity)
     {
-        if (!Enum.TryParse((string)partlyDeserializedEntity.direction, true, out CompassDirection entityDirection))
+        if (!_directionMappings.ContainsKey((string)partlyDeserializedEntity.direction))
         {
             throw new JsonException(
                 $"Could not parse ship direction from '{partlyDeserializedEntity.direction}'.");
         }
+
+        var entityDirection = _directionMappings[(string)partlyDeserializedEntity.direction];
 
         var entityCoordinates = new Coordinates
             { X = partlyDeserializedEntity.position.x, Y = partlyDeserializedEntity.position.y };
