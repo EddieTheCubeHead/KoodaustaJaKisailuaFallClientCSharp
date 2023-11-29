@@ -1,9 +1,7 @@
-﻿using System.ComponentModel;
-using System.Net.WebSockets;
+﻿using System.Net.WebSockets;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using WebsocketClient.Entities;
 using WebsocketClient.Wrapper.Entities;
 
 namespace WebsocketClient.Wrapper;
@@ -64,15 +62,19 @@ public class Client
     private async Task<string> WaitForRawMessage()
     {
         _logger.LogDebug("Waiting for message...");
-        var buffer = new ArraySegment<byte>(new byte[1024]);
-        var result = await _webSocket.ReceiveAsync(buffer, new CancellationToken());
-        if (buffer.Array is null)
+        var rawMessage = string.Empty;
+        WebSocketReceiveResult result;
+        do
         {
-            _logger.LogError("Received null message");
-            return string.Empty;
-        }
-
-        var rawMessage = Encoding.UTF8.GetString(buffer.Array, 0, result.Count);
+            var buffer = new ArraySegment<byte>(new byte[1024]);
+            result = await _webSocket.ReceiveAsync(buffer, new CancellationToken());
+            if (buffer.Array is null)
+            {
+                _logger.LogError("Received null message");
+                return string.Empty;
+            }
+            rawMessage += Encoding.UTF8.GetString(buffer.Array, 0, result.Count);
+        } while (!result.EndOfMessage);
 
         _logger.LogDebug($"Received message: {rawMessage}");
         return rawMessage;
@@ -158,8 +160,20 @@ public class Client
 
         GameState gameState = _serializer.DeserializeGameState(rawGameState);
         _logger.LogDebug($"Received game tick of turn {gameState.TurnNumber}");
-        var task = Task.Run(() => _teamAi.ProcessTick(gameState));
+        var command = HandleTickWithTimeout(gameState) ?? new Command
+            { Action = ActionType.Move, Payload = new MoveActionData { Distance = 0 } };
+        await SendMessage("gameAction", _serializer.SerializeCommand(command));
+    }
+
+    private Command? HandleTickWithTimeout(GameState gameState)
+    {
+        if (_teamAi.Context.TickLength == 0)
+        {
+            return ProcessTickWrapper(gameState);
+        }
+        
         Command? command = null;
+        var task = Task.Run(() => ProcessTickWrapper(gameState));
         if (task.Wait(TimeSpan.FromMilliseconds(_teamAi.Context.TickLength - 50)))
         {
             command = task.Result;
@@ -168,10 +182,28 @@ public class Client
         {
             _logger.LogWarning("TeamAi took too long to process tick");
         }
-        command ??= new Command { Action = ActionType.Move, ActionData = new MoveActionData { Distance = 0 } };
-        await SendMessage("gameAction", _serializer.SerializeCommand(command));
+
+        return command;
     }
-    
+
+    private Command? ProcessTickWrapper(GameState gameState)
+    {
+        Command? command = null;
+        try
+        {
+            var timer = System.Diagnostics.Stopwatch.StartNew();
+            command = _teamAi.ProcessTick(gameState);
+            timer.Stop();
+            _logger.LogInformation($"tick processed in {timer.ElapsedMilliseconds} milliseconds");
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "TeamAi threw an exception while processing tick");
+        }
+
+        return command;
+    }
+
     private async Task HandleGameEnd()
     {
         if (State != ClientState.Idle)

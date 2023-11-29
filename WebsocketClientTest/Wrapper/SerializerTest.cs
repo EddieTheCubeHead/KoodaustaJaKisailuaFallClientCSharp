@@ -36,7 +36,7 @@ public class SerializerTest
     [Test]
     public void ShouldSerializeCommandToTypeAndInterfaceSerializeCallResult()
     {
-        var command = new Command{Action = ActionType.Shoot, ActionData = new TestActionData()};
+        var command = new Command{Action = ActionType.Shoot, Payload = new TestActionData()};
 
         var commandJson = _serializer.SerializeCommand(command);
 

@@ -4,6 +4,12 @@ namespace WebsocketClient;
 
 public static class Helpers
 {
+    /// <summary>
+    /// Get the difference between two coordinates
+    /// </summary>
+    /// <param name="origin">the origin (source) coordinates for the calculation</param>
+    /// <param name="target">the target coordinates for the calculation</param>
+    /// <returns>a vector representing the difference from origin to target</returns>
     public static Coordinates GetCoordinateDifference(Coordinates origin, Coordinates target)
     {
         return new Coordinates
@@ -13,6 +19,12 @@ public static class Helpers
         };
     }
 
+    /// <summary>
+    /// Get a compass direction most closely representing the given vector
+    /// </summary>
+    /// <param name="vector">the vector which should be converted to approximate compass direction</param>
+    /// <returns>the compass direction closest to the vector</returns>
+    /// <exception cref="Exception">If you give a vector that breaks 2d space an exception is raised</exception>
     public static CompassDirection GetApproximateDirection(Coordinates vector)
     {
         var angle = GetAngleDegrees(vector);
@@ -39,7 +51,13 @@ public static class Helpers
         return angleDegrees < 0 ? angleDegrees + 360 : angleDegrees;
     }
 
-    public static Coordinates GetEntityCoordinates(string entityId, Cell[][] map)
+    /// <summary>
+    /// Get coordinates for a given entity from the given game map
+    /// </summary>
+    /// <param name="entityId">the id of the entity to search for in the map</param>
+    /// <param name="map">the game map to search for the entity in</param>
+    /// <returns>the entity coordinates if the entity exists, otherwise null</returns>
+    public static Coordinates? GetEntityCoordinates(string entityId, Cell[][] map)
     {
         for (var y = 0; y < map.Length; y++)
         {
@@ -53,22 +71,31 @@ public static class Helpers
             }
         }
 
-        throw new Exception($"Could not find entity with id {entityId} in map.");
+        return null;
     }
 
+    /// <summary>
+    /// Get the compass direction that is the furthest one you are allowed to turn towards from the given starting
+    /// direction, given the turn rate.
+    /// </summary>
+    /// <param name="startingDirection">the starting direction for the turn</param>
+    /// <param name="targetDirection">the target direction for the turn</param>
+    /// <param name="turnRate">the turn rate for the game, see ClientContext.turnRate</param>
+    /// <returns>the furthest direction between starting and target directions allowed by the turn rate</returns>
+    /// <remarks>If performing a 180-degree turn, the function will always perform the partial turn clockwise</remarks>
     public static CompassDirection GetPartialTurn(CompassDirection startingDirection, CompassDirection targetDirection,
-        TeamAiContext context)
+        int turnRate)
     {
         var initialTurn = (targetDirection - startingDirection) % 8;
         initialTurn = initialTurn < 0 ? initialTurn + 8 : initialTurn; // Again, no modulo operator
 
         if (initialTurn <= 4) // turning clockwise
         {
-            return (CompassDirection)((int)startingDirection + int.Min(initialTurn, context.TurnRate));
+            return (CompassDirection)((int)startingDirection + int.Min(initialTurn, turnRate));
         }
 
         // turning counter-clockwise
         initialTurn -= 8;
-        return (CompassDirection)((int)startingDirection + int.Max(initialTurn, -context.TurnRate));
+        return (CompassDirection)((int)startingDirection + int.Max(initialTurn, -turnRate));
     }
 }

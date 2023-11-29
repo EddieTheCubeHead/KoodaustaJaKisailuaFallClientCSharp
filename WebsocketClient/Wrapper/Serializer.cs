@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using WebsocketClient.Entities;
 using WebsocketClient.Wrapper.Entities;
 
 namespace WebsocketClient.Wrapper;
@@ -21,7 +20,7 @@ public class Serializer
     public string SerializeCommand(Command command)
     {
         var actionType = command.Action.ToString().ToLower();
-        var actionData = command.ActionData.Serialize();
+        var actionData = command.Payload.Serialize();
         return $"{{\"action\": \"{actionType}\", \"payload\": {actionData}}}";
     }
     
@@ -120,7 +119,7 @@ public class Serializer
             Id = partlyDeserializedProjectileData.id,
             Direction = entityLocationData.direction,
             Position = entityLocationData.position,
-            Velocity = partlyDeserializedProjectileData.velocity,
+            Speed = partlyDeserializedProjectileData.velocity,
             Mass = partlyDeserializedProjectileData.mass
         };
     }
