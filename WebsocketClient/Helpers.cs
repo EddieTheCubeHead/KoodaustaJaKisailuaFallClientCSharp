@@ -1,9 +1,14 @@
-﻿using WebsocketClient.Wrapper.Entities;
+﻿using Microsoft.Extensions.Configuration;
+using WebsocketClient.Wrapper.Entities;
 
 namespace WebsocketClient;
 
 public static class Helpers
 {
+    private static IConfigurationRoot config = new ConfigurationBuilder()
+        .AddJsonFile("appsettings.json", true, true)
+        .AddEnvironmentVariables().Build();
+    
     /// <summary>
     /// Get the difference between two coordinates
     /// </summary>
@@ -97,5 +102,14 @@ public static class Helpers
         // turning counter-clockwise
         initialTurn -= 8;
         return (CompassDirection)((int)startingDirection + int.Max(initialTurn, -turnRate));
+    }
+
+    /// <summary>
+    /// Get the id of your ship
+    /// </summary>
+    /// <returns>The ship id as string</returns>
+    public static string GetOwnShipId()
+    {
+        return $"ship:{config["Client:Token"]}:{config["Client:BotName"]}";
     }
 }
