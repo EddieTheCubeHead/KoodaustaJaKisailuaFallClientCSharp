@@ -10,15 +10,27 @@ public record TurnActionData : IActionData
     /// compass direction steps away from the ship starting position
     /// </summary>
     public required CompassDirection Direction { get; init; }
-    
+
+
+    private static Dictionary<CompassDirection, string> _directionMappings = new()
+    {
+        { CompassDirection.North, "n"},
+        {  CompassDirection.NorthEast, "ne"},
+        { CompassDirection.East, "e"},
+        {  CompassDirection.SouthEast, "se"},
+        { CompassDirection.South, "s"},
+        {  CompassDirection.SouthWest, "sw"},
+        { CompassDirection.West, "w"},
+        {  CompassDirection.NorthWest, "nw"}
+    };
     /// <summary>
     /// Serialize the action data to a json string
     /// </summary>
     /// <returns>The action data serialized as json in a string format</returns>
     public string Serialize()
     {
-        var lowercaseDirection = string.Concat(Direction.ToString()[..1].ToLower(),
-            Direction.ToString().AsSpan(1));
+
+        var lowercaseDirection = _directionMappings[Direction];
         return
             $"{{\"direction\":\"{lowercaseDirection}\"}}";
     }
