@@ -12,18 +12,22 @@ public class Client
     private readonly ILogger _logger;
     private readonly TeamAi _teamAi;
     private readonly Serializer _serializer = new();
+    private readonly string _token;
+    private readonly string _botName;
     private ClientState State { get; set; } = ClientState.Unauthorized;
 
-    public Client(ILoggerFactory loggerFactory)
+    public Client(ILoggerFactory loggerFactory, string token, string botName)
     {
         _logger = loggerFactory.CreateLogger<Client>();
-        _teamAi = new TeamAi(loggerFactory);
+        _token = token;
+        _botName = botName;
+        _teamAi = new TeamAi(loggerFactory, token, botName);
     }
-    
-    public async Task Run(string socketUri, string token, string botName)
+
+    public async Task Run(string socketUri)
     {
-        await Connect(socketUri, token, botName);
-        await Authenticate(token, botName);
+        await Connect(socketUri, _token, _botName);
+        await Authenticate(_token, _botName);
         while (true)
         {
             await listenOnWebsocket();
@@ -38,7 +42,7 @@ public class Client
         _logger.LogInformation($"Connecting to {fullUriString}");
         await _webSocket.ConnectAsync(new Uri(fullUriString), new CancellationToken());
     }
-    
+
     private async Task Authenticate(string token, string botName)
     {
         _logger.LogInformation($"Authorizing client with token '{token}' and name '{botName}'.");
@@ -142,14 +146,14 @@ public class Client
             _logger.LogWarning("Received game start while not in idle state");
             return;
         }
-        
+
         StartGameData gameData = _serializer.DeserializeStartGameData(rawGameData);
-        
+
         _teamAi.CreateContext(gameData);
 
         await SendMessage("startAck", "{}");
     }
-    
+
     private async Task HandleGameTick(dynamic? rawGameState)
     {
         if (rawGameState is null)
@@ -161,7 +165,7 @@ public class Client
         GameState gameState = _serializer.DeserializeGameState(rawGameState);
         _logger.LogDebug($"Received game tick of turn {gameState.TurnNumber}");
         var command = HandleTickWithTimeout(gameState) ?? new Command
-            { Action = ActionType.Move, Payload = new MoveActionData { Distance = 0 } };
+        { Action = ActionType.Move, Payload = new MoveActionData { Distance = 0 } };
         await SendMessage("gameAction", _serializer.SerializeCommand(command));
     }
 
@@ -171,16 +175,19 @@ public class Client
         {
             return ProcessTickWrapper(gameState);
         }
-        
+
+        //Command? command = ProcessTickWrapper(gameState);
+
         Command? command = null;
         var task = Task.Run(() => ProcessTickWrapper(gameState));
-        if (task.Wait(TimeSpan.FromMilliseconds(_teamAi.Context.TickLength - 50)))
+
+        if (task.Wait(TimeSpan.FromMilliseconds((int)(_teamAi.Context.TickLength / 2) - 3)))
         {
             command = task.Result;
         }
         else
         {
-            _logger.LogWarning("TeamAi took too long to process tick");
+            _logger.LogWarning($"TeamAi took too long to process tick. Limit: {(int)(_teamAi.Context.TickLength / 2) - 3}ms");
         }
 
         return command;
@@ -222,7 +229,7 @@ public class Client
             _logger.LogError("Attempting to send message before websocket initialization!");
             return;
         }
-        
+
         var fullMessage = $"{{\"eventType\": \"{eventType}\", \"data\": {data}}}";
         _logger.LogDebug($"Sending: {fullMessage}");
         await _webSocket.SendAsync(Encoding.UTF8.GetBytes(fullMessage), WebSocketMessageType.Text, true,

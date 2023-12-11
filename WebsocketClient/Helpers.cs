@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System.Numerics;
+using Microsoft.Extensions.Configuration;
 using WebsocketClient.Wrapper.Entities;
 
 namespace WebsocketClient;
@@ -57,6 +58,36 @@ public static class Helpers
     }
 
     /// <summary>
+    /// Get a compass direction most closely representing the given vector
+    /// </summary>
+    /// <param name="vector">the vector which should be converted to approximate compass direction</param>
+    /// <returns>the compass direction closest to the vector</returns>
+    /// <exception cref="Exception">If you give a vector that breaks 2d space an exception is raised</exception>
+    public static CompassDirection GetApproximateDirection(Vector2 vector)
+    {
+        Vector2 East = new Vector2(1, 0);
+        double dot = (double)Vector2.Dot(vector, East);
+        double det = (double)(vector.X * East.Y - vector.Y * East.X);
+        double angle = (double)Math.Atan2((double)det, (double)dot);
+        var angleDegrees = angle * 180 / Math.PI;       
+        angleDegrees = angleDegrees < 0 ? angleDegrees + 360 : angleDegrees;
+        const float cutoff = 22.5F;
+
+        return angleDegrees switch
+        {
+            >= 15 * cutoff or < cutoff => CompassDirection.East,
+            >= cutoff and < 3 * cutoff => CompassDirection.NorthEast,
+            >= 3 * cutoff and < 5 * cutoff => CompassDirection.North,
+            >= 5 * cutoff and < 7 * cutoff => CompassDirection.NorthWest,
+            >= 7 * cutoff and < 9 * cutoff => CompassDirection.West,
+            >= 9 * cutoff and < 11 * cutoff => CompassDirection.SouthWest,
+            >= 11 * cutoff and < 13 * cutoff => CompassDirection.South,
+            >= 13 * cutoff and < 15 * cutoff => CompassDirection.SouthEast,
+            _ => throw new Exception($"Could not determine direction for vector {vector}")
+        };
+    }
+
+    /// <summary>
     /// Get coordinates for a given entity from the given game map
     /// </summary>
     /// <param name="entityId">the id of the entity to search for in the map</param>
@@ -111,5 +142,11 @@ public static class Helpers
     public static string GetOwnShipId()
     {
         return $"ship:{config["Client:Token"]}:{config["Client:BotName"]}";
+    }
+
+    public static double RadiansToDegrees(double radians)
+    {
+        double degrees = (180 / Math.PI) * radians;
+        return (degrees);
     }
 }

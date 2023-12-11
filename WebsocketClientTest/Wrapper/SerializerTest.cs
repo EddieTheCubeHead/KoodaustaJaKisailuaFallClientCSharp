@@ -1,6 +1,5 @@
 using Microsoft.VisualStudio.TestPlatform.CrossPlatEngine.Helpers;
 using Newtonsoft.Json;
-using WebsocketClient.Entities;
 using WebsocketClient.Wrapper;
 using WebsocketClient.Wrapper.Entities;
 

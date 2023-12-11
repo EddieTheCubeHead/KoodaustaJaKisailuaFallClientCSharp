@@ -132,8 +132,7 @@ public class GetPartialTurnTest
     [Test]
     public void ShouldReturnGivenDirectionIfTurnIsNotTooSharp()
     {
-        var context = new TeamAiContext(200, 2);
-        var direction = Helpers.GetPartialTurn(CompassDirection.North, CompassDirection.East, context);
+        var direction = Helpers.GetPartialTurn(CompassDirection.North, CompassDirection.East, 2);
 
         Assert.That(direction, Is.EqualTo(CompassDirection.East));
     }
@@ -141,8 +140,7 @@ public class GetPartialTurnTest
     [Test]
     public void ShouldReturnLessSharpTurnIfTurnIsTooSharp()
     {
-        var context = new TeamAiContext(200, 2);
-        var direction = Helpers.GetPartialTurn(CompassDirection.North, CompassDirection.SouthEast, context);
+        var direction = Helpers.GetPartialTurn(CompassDirection.North, CompassDirection.SouthEast, 2);
         
         Assert.That(direction, Is.EqualTo(CompassDirection.East));
     }
@@ -150,8 +148,7 @@ public class GetPartialTurnTest
     [Test]
     public void ShouldTurnClockwiseIfHalfCircleTurnRequired()
     {
-        var context = new TeamAiContext(200, 2);
-        var direction = Helpers.GetPartialTurn(CompassDirection.NorthEast, CompassDirection.SouthWest, context);
+        var direction = Helpers.GetPartialTurn(CompassDirection.NorthEast, CompassDirection.SouthWest, 2);
         
         Assert.That(direction, Is.EqualTo(CompassDirection.SouthEast));
     }
@@ -159,9 +156,60 @@ public class GetPartialTurnTest
     [Test]
     public void ShouldFunctionCorrectlyForCounterClockWiseTurns()
     {
-        var context = new TeamAiContext(200, 1);
-        var direction = Helpers.GetPartialTurn(CompassDirection.NorthEast, CompassDirection.West, context);
-        
+        var direction = Helpers.GetPartialTurn(CompassDirection.NorthEast, CompassDirection.SouthWest, 2);
+
         Assert.That(direction, Is.EqualTo(CompassDirection.North));
     }
+}
+
+[TestFixture]
+public class GetNearestDirectionWeCanTurnToTest
+{
+    [Test]
+    public void ShouldReturnGivenDirectionIfTurnIsNotTooSharp()
+    {
+        var direction = TeamAi.GetNearestDirectionWeCanTurnTo(CompassDirection.North, CompassDirection.East, 1);
+
+        Assert.That(direction, Is.EqualTo(CompassDirection.NorthEast));
+    }
+
+    [Test]
+    public void ShouldReturnLessSharpTurnIfTurnIsTooSharp()
+    {
+        var direction = TeamAi.GetNearestDirectionWeCanTurnTo(CompassDirection.North, CompassDirection.SouthEast, 1);
+        
+        Assert.That(direction, Is.EqualTo(CompassDirection.NorthEast));
+    }
+
+    [Test]
+    public void ShouldTurnClockwiseIfHalfCircleTurnRequired()
+    {
+        var direction = TeamAi.GetNearestDirectionWeCanTurnTo(CompassDirection.NorthEast, CompassDirection.SouthWest, 1);
+        
+        Assert.That(direction, Is.EqualTo(CompassDirection.East));
+    }
+    
+    [Test]
+    public void ShouldFunctionCorrectlyForCounterClockWiseTurns()
+    {
+        var direction = TeamAi.GetNearestDirectionWeCanTurnTo(CompassDirection.NorthEast, CompassDirection.West, 1);
+        
+        Assert.That(direction, Is.EqualTo(CompassDirection.North));
+    }   
+    
+    [TestCase(CompassDirection.North, CompassDirection.West, 2, CompassDirection.West)]
+    [TestCase(CompassDirection.North, CompassDirection.SouthWest, 2, CompassDirection.West)]
+    [TestCase(CompassDirection.NorthWest, CompassDirection.SouthEast, 3, CompassDirection.SouthEast)]
+    [TestCase(CompassDirection.NorthWest, CompassDirection.SouthEast, 4, CompassDirection.SouthEast)]
+    [TestCase(CompassDirection.North, CompassDirection.SouthEast, 4, CompassDirection.SouthEast)]
+    [TestCase(CompassDirection.North, CompassDirection.SouthEast, 2, CompassDirection.East)]
+    [TestCase(CompassDirection.NorthWest, CompassDirection.NorthEast, 2, CompassDirection.NorthEast)]
+    public void ShouldFunctionCorrectlyForCounterClockWiseTurns(
+        CompassDirection shipDirection, CompassDirection toTurnTo, int maxTurns, CompassDirection expected)
+    {
+        var direction = TeamAi.GetNearestDirectionWeCanTurnTo(shipDirection, toTurnTo, maxTurns);
+        
+        Assert.That(direction, Is.EqualTo(expected));
+    }
+
 }

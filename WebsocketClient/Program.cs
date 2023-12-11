@@ -24,7 +24,7 @@ class Program
             builder.AddFilter("WebsocketClient.Wrapper", loggingConfig.Wrapper.LogLevel);
             builder.AddProvider(new FileLoggerProvider(logFileWriter));
         });
-        var client = new Client(loggerFactory);
-        await client.Run(config["Client:WebSocketUrl"], config["Client:Token"], config["Client:BotName"]);
+        var client = new Client(loggerFactory, config["Client:Token"], config["Client:BotName"]);
+        await client.Run(config["Client:WebSocketUrl"]);
     }
 }
